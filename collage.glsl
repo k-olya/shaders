@@ -1,3 +1,9 @@
+float random (vec2 st) {
+        st = fract(st * vec2(123.45, 456.78));
+        st += dot(st, st * 42.0);
+        return clamp(fract(st.x * st.y) + .2, 0., 1.);
+    }
+
 // normalize screen space coordinates
 vec2 norm(int x, int y) {
     // replace with actual screen resolution
@@ -10,12 +16,22 @@ float o(int i) {
 }
 // map one rect to another
 void collage( out vec4 fragColor, in vec2 srcXY, in float srcW, in vec2 destXY, in vec2 destWH, in vec2 uv, in int i) {
+    // destWH.y *= o(i); // enable show/hide transition fx
+    //destXY.y -= destWH.y;
+    float randv = dot(random(destXY), random(destXY));
+    destXY.y += .1 * sin(float(i) * 1.57 + iTime * 1.57 * randv);
+    destWH.y *= .75 + .25 * sin(float(i) * 1.57 + iTime * 1.57 * randv);//sin(float(i * 10) + iTime * 9.72);
+    vec2 destWHprev = destWH;
+    // shrink & no overlap
+    //destWH.x *= .66 + .33 * sin(float(11 - i) * 1.57 + iTime * 1.57 * randv);
+    // shrink & overlap
+    destWH.x = .5 + .5 * sin(float(11 - i) * 1.57 + iTime * 1.57 * randv);
     if (clamp(uv, destXY, destXY + destWH) == uv) {
         srcXY = fract(srcXY);
-        vec2 srcWH = vec2(srcW, srcW * destWH.y / destWH.x);
-        vec2 t = (uv - destXY) / destWH;
+        vec2 srcWH = vec2(srcW, srcW * destWHprev.y / destWHprev.x);
+        vec2 t = (uv - destXY) / destWHprev;
         vec2 st = mix(srcXY, srcXY + srcWH, t);
-        fragColor = texture(iChannel0, st) * o(i); // vec4(.75, 0.0, 0.75, 1.0);
+        fragColor = texture(iChannel0, st); // vec4(.75, 0.0, 0.75, 1.0);
     }
 }
 
